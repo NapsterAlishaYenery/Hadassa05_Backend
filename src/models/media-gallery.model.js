@@ -1,58 +1,75 @@
 
 const { Schema, model } = require('mongoose');
+const MediaSchema = require('./schemas/media.schema')
 
 const slugify = require('slugify');
 
 const gallerySchema = new Schema({
     title: {
         type: String,
-        required: true,
+        required: [true, 'El título del evento es requerido'],
+        trim: true
+    },
+    slug: {
+        type: String,
+        unique: true,
+        lowercase: true,
         trim: true
     },
     description: {
         type: String,
-        required: [true, 'Description of gallery is required'],
+        required: [true, 'La descripción del evento es requerida'],
         trim: true
     },
     niche: {
         type: String,
         lowercase: true,
-        enum: ['event', 'legal'],
-        required: [true, 'Niche must be specified']
+        enum: ['event'],
+        default: 'event',
+        required: [true, 'El nicho es requerido']
     },
-    // Esto vincula la galería a un servicio (ej: "Bodas", "Migración")
-    serviceType: {
+    eventType: {
         type: String,
-        required: true
+        required: [true, 'El tipo de evento es requerido'],
+        trim: true
     },
-    // Array de objetos para manejar fotos y videos mezclados
-    media: [{
-        filename: {
-            type: String,
-            required: [true, 'El nombre del archivo es obligatorio']
-        },
-        extension: {
-            type: String,
-            required: [true, 'La extensión es obligatoria']
-        },
-        mediaType: {
-            type: String,
-            enum: ['image', 'video'],
-            default: 'image'
-        },
-        caption: {
-            type: String,
-            required: [true, 'El caption (texto ALT) es vital para el SEO'],
-            trim: true
-        },
-    }],
+    client: {
+        type: String,
+        required: [true, 'El nombre del cliente es requerido'],
+        trim: true
+    },
+    eventDate: {
+        type: Date,
+        required: [true, 'La fecha del evento es requerida']
+    },
+    location: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    // Usamos el sub-schema para el array de media
+    media: {
+        type: [MediaSchema],
+        default: [],
+        validate: {
+            validator: function(v) {
+                return v.length > 0;
+            },
+            message: 'Al menos una imagen o video es requerido'
+        }
+    },
+    // Imagen destacada (portada)
+    coverImage: {
+        type: MediaSchema,
+        required: false
+    },
+    isFeatured: {
+        type: Boolean,
+        default: false
+    },
     isPublic: {
         type: Boolean,
         default: true
-    },
-    slug: {
-        type: String,
-        unique: true
     }
 
 }, {

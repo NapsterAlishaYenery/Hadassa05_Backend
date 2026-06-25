@@ -15,6 +15,7 @@ const conectarMongoDBAltas = require('./config/db');
 // Importar las rutas
 const usersRoutes = require('./routes/users.route');
 const servicesHadassa05Routes = require('./routes/services-hadassa05.route');
+const galleryRoutes = require('./routes/gallery.routes');
 
 // importar el auto 
 const setupAutoPing = require('./utils/auto-ping.util');
@@ -66,6 +67,7 @@ app.get('/keep-alive', (req, res) => {
 // Usara las rutas
 app.use('/api/users', usersRoutes);
 app.use('/api/hadassa05-services', servicesHadassa05Routes);
+app.use('/api/gallery', galleryRoutes);
 
 
 
