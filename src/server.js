@@ -16,6 +16,7 @@ const conectarMongoDBAltas = require('./config/db');
 const usersRoutes = require('./routes/users.route');
 const servicesHadassa05Routes = require('./routes/services-hadassa05.route');
 const galleryRoutes = require('./routes/gallery.routes');
+const emailRoutes = require('./routes/email.routes');
 
 // importar el auto 
 const setupAutoPing = require('./utils/auto-ping.util');
@@ -68,6 +69,7 @@ app.get('/keep-alive', (req, res) => {
 app.use('/api/users', usersRoutes);
 app.use('/api/hadassa05-services', servicesHadassa05Routes);
 app.use('/api/gallery', galleryRoutes);
+app.use('/api/email', emailRoutes);
 
 
 
@@ -91,7 +93,7 @@ app.use('/uploads', (req, res, next) => {
 );
 
 // configurar el puesto del servidor
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 4002;
 
 // Iniciar el sistema de auto-ping
 setupAutoPing();
