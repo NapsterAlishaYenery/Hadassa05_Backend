@@ -17,9 +17,7 @@ const usersRoutes = require('./routes/users.route');
 const servicesHadassa05Routes = require('./routes/services-hadassa05.route');
 const galleryRoutes = require('./routes/gallery.routes');
 const emailRoutes = require('./routes/email.routes');
-
-// importar el auto 
-const setupAutoPing = require('./utils/auto-ping.util');
+const googleReviewRoutes = require('./routes/review-google.routes');
 
 
 // Crear el server
@@ -60,17 +58,12 @@ app.use(express.json());
 // Conectar a Mongo
 conectarMongoDBAltas();
 
-// Ruta simple para mantener el servidor despierto
-app.get('/keep-alive', (req, res) => {
-  res.status(200).send('Servidor activo');
-});
-
 // Usara las rutas
 app.use('/api/users', usersRoutes);
 app.use('/api/hadassa05-services', servicesHadassa05Routes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/email', emailRoutes);
-
+app.use('/api/google', googleReviewRoutes);
 
 
 // Configurar Middleware global de errores
@@ -95,8 +88,6 @@ app.use('/uploads', (req, res, next) => {
 // configurar el puesto del servidor
 const port = process.env.PORT || 4002;
 
-// Iniciar el sistema de auto-ping
-setupAutoPing();
 
 // Iniciar el server
 app.listen(port, ()=>{
