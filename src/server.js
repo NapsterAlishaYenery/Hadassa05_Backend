@@ -6,6 +6,9 @@ const compression = require('compression');
 require('dotenv').config();
 const path = require('path');
 
+// Importar las cookeis 
+const cookieParser = require('cookie-parser');
+
 // Importar middleware de limitacion global
 const globalLimiter = require('./middlewares/globalLimiter.middleware');
 
@@ -54,6 +57,7 @@ app.use(cors({
 app.use(helmet());
 app.use(compression());
 app.use(express.json());
+app.use(cookieParser());
 
 // Conectar a Mongo
 conectarMongoDBAltas();
