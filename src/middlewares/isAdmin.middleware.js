@@ -1,12 +1,25 @@
 const isAdminMiddleware = (req, res, next) => {
-    if (!req.user || req.user.role !== 'admin') {
-
-        return res.status(403).json({
+    // Verificar que el usuario esté autenticado
+    if (!req.user) {
+        return res.status(401).json({
             ok: false,
-            type: 'Forbidden',
-            message: 'Access denied: Administrators only'
+            type: 'UnauthorizedError',
+            data: null,
+            message: 'No autenticado: Se requiere iniciar sesión'
         });
     }
+
+    // ⭐ PERMITIR TANTO 'admin' COMO 'super-admin' (si existe en Hadassa)
+    // Si Hadassa solo tiene 'admin', puedes dejar solo esa validación
+    if (req.user.role !== 'admin' && req.user.role !== 'super-admin') {
+        return res.status(403).json({
+            ok: false,
+            type: 'ForbiddenError',
+            data: null,
+            message: 'Acceso denegado: Se requieren permisos de administrador'
+        });
+    }
+
     next();
 };
 

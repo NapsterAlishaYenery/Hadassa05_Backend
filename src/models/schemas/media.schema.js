@@ -44,6 +44,10 @@ const MediaSchema = new Schema({
     order: {
         type: Number,
         default: 0
+    },
+    duration: {
+        type: Number,
+        default: null
     }
 }, { _id: false }); // No generar _id para cada subdocumento
 

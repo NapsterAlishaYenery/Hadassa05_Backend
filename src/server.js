@@ -68,7 +68,7 @@ app.use('/api/google', googleReviewRoutes);
 
 // Configurar Middleware global de errores
 app.use((err, req, res, next) => {
-    console.error("Global Server Error:", err.message);
+    console.error("Global Server Error:", err);
     res.status(500).json({ error: "Internal server error captured in the global error middleware" });
 })
 

@@ -14,12 +14,27 @@ exports.uploadFile = async (filePath, folder) => {
       use_filename: true,
       unique_filename: true,
       overwrite: true,
+      resource_type: 'auto',
+    });
+
+    console.log('📦 Cloudinary result: Desde el servicio de cloudinary', {
+      public_id: result.public_id,
+      resource_type: result.resource_type,
+      format: result.format,
+      width: result.width,
+      height: result.height,
+      duration: result.duration
     });
 
 
     return {
       public_id: result.public_id,
-      url: result.secure_url
+      url: result.secure_url,
+      resource_type: result.resource_type || 'image', // ⭐ 'image' o 'video'
+      format: result.format || 'jpg',
+      width: result.width || 0,
+      height: result.height || 0,
+      duration: result.duration || null
     };
 
   } catch (error) {

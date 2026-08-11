@@ -8,10 +8,8 @@ const deleteLocalFiles = require('../utils/fileCleanup.util');
  */
 exports.createGallery = async (req, res) => {
     try {
-        // 1. Extraer los datos del body (ya validados por Joi)
         const galleryData = req.body;
 
-        // 2. Validar que se hayan subido archivos
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({
                 ok: false,
@@ -20,21 +18,23 @@ exports.createGallery = async (req, res) => {
             });
         }
 
-        // 3. Subir archivos a Cloudinary usando uploadFile
+        // Subir a Cloudinary
         const uploadPromises = req.files.map(file =>
-            uploadFile(file.path, 'gallery')  // 👈 Cambiado a 'gallery' y uploadFile
+            uploadFile(file.path, 'gallery')
         );
         const uploadResults = await Promise.all(uploadPromises);
 
-        // 4. Construir el array de media con la respuesta de Cloudinary
+        // ⭐ LOG para ver los resultados
+        console.log('📦 Upload results: desde el controlador', uploadResults);
+
+        // Construir media items
         const mediaItems = uploadResults.map((result, index) => {
-            const originalFile = req.files[index];
             return {
                 public_id: result.public_id,
                 url: result.url,
                 thumbnailUrl: result.url,
-                alt: galleryData.title || `Gallery image ${index + 1}`,
-                mediaType: originalFile.mimetype?.startsWith('video') ? 'video' : 'image',
+                alt: galleryData.title || `Gallery ${index + 1}`,
+                mediaType: result.resource_type || 'image', // ⭐ Usamos lo que devuelve Cloudinary
                 width: result.width || 0,
                 height: result.height || 0,
                 format: result.format || 'jpg',
@@ -42,20 +42,18 @@ exports.createGallery = async (req, res) => {
             };
         });
 
-        // 5. Usar la primera imagen como coverImage
-        const coverImage = mediaItems.length > 0 ? mediaItems[0] : null;
+        // Cover image
+        const firstImage = mediaItems.find(item => item.mediaType === 'image');
+        const coverImage = firstImage || (mediaItems.length > 0 ? mediaItems[0] : null);
 
-        // 6. Construir el objeto final para guardar en DB
         const galleryDocument = {
             ...galleryData,
             media: mediaItems,
             coverImage: coverImage
         };
 
-        // 7. Crear en la base de datos
         const newGallery = await Gallery.create(galleryDocument);
 
-        // 8. Respuesta exitosa
         res.status(201).json({
             ok: true,
             data: newGallery,
@@ -65,16 +63,14 @@ exports.createGallery = async (req, res) => {
     } catch (error) {
         console.error('--- CREATE GALLERY ERROR ---', error);
 
-        // Error de duplicado (slug duplicado)
         if (error.code === 11000) {
             return res.status(400).json({
                 ok: false,
                 type: 'DuplicateError',
-                message: 'An event with this title already exists. Please use another title.'
+                message: 'An event with this title already exists.'
             });
         }
 
-        // Error de validación de Mongoose
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({
@@ -84,7 +80,6 @@ exports.createGallery = async (req, res) => {
             });
         }
 
-        // Error genérico del servidor
         res.status(500).json({
             ok: false,
             type: 'ServerError',
@@ -92,13 +87,14 @@ exports.createGallery = async (req, res) => {
         });
 
     } finally {
-        // 9. Limpiar archivos temporales (Multer)
         if (req.files && req.files.length > 0) {
             const filesObject = { gallery: req.files };
             await deleteLocalFiles(filesObject);
         }
     }
 };
+
+
 
 /**
  * UPDATE - Actualizar campos básicos de la galería
@@ -179,51 +175,64 @@ exports.addMedia = async (req, res) => {
             });
         }
 
-        // Subir nuevas imágenes a Cloudinary
+        // Subir archivos a Cloudinary
         const uploadPromises = req.files.map(file =>
             uploadFile(file.path, 'gallery')
         );
         const uploadResults = await Promise.all(uploadPromises);
 
-        // Crear nuevos items de media
+        // Crear nuevos items de media con la misma lógica que createGallery
+        // ⭐ VERSIÓN SIMPLIFICADA - Usando datos de Cloudinary
         const newMediaItems = uploadResults.map((result, index) => {
-            const originalFile = req.files[index];
             const currentOrder = gallery.media.length + index;
+
+            // ⭐ Cloudinary ahora devuelve todo: resource_type, width, height, format
+            const mediaType = result.resource_type || 'image';
+
+            console.log(`📹 Agregando archivo ${index + 1} -> ${mediaType} (${result.format})`);
 
             return {
                 public_id: result.public_id,
                 url: result.url,
                 thumbnailUrl: result.url,
                 alt: gallery.title || `Imagen ${currentOrder + 1}`,
-                mediaType: originalFile.mimetype?.startsWith('video') ? 'video' : 'image',
+                mediaType: mediaType, // ⭐ 'image' o 'video'
                 width: result.width || 0,
                 height: result.height || 0,
                 format: result.format || 'jpg',
-                order: currentOrder
+                order: currentOrder,
+                duration: result.duration || null // ⭐ Para videos
             };
         });
 
         // Agregar al array existente
         gallery.media.push(...newMediaItems);
 
-        // Si no hay coverImage, usar la primera nueva
+        // Si no hay coverImage, usar la primera imagen
         if (!gallery.coverImage && newMediaItems.length > 0) {
-            gallery.coverImage = newMediaItems[0];
+            const firstImage = newMediaItems.find(item => item.mediaType === 'image');
+            gallery.coverImage = firstImage || newMediaItems[0];
         }
 
         await gallery.save();
 
+        // Log de éxito
+        console.log(`✅ Archivos agregados a: ${gallery.title}`);
+        console.log(`   Total medios: ${gallery.media.length}`);
+        console.log(`   Imágenes: ${gallery.media.filter(m => m.mediaType === 'image').length}`);
+        console.log(`   Videos: ${gallery.media.filter(m => m.mediaType === 'video').length}`);
+
         res.json({
             ok: true,
             data: gallery,
-            message: `${newMediaItems.length} imagen(es) agregada(s) exitosamente`
+            message: `${newMediaItems.length} archivo(s) agregado(s) exitosamente`
         });
 
     } catch (error) {
         console.error('--- ADD MEDIA ERROR ---', error);
         res.status(500).json({
             ok: false,
-            message: 'Error al agregar imágenes'
+            message: 'Error al agregar archivos'
         });
     } finally {
         if (req.files && req.files.length > 0) {

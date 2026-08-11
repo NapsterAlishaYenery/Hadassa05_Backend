@@ -74,7 +74,7 @@ exports.register = async (req, res) => {
 }
 
 exports.login = async (req, res) => {
-    
+
     const { username, password } = req.body;
 
     try {
@@ -98,14 +98,31 @@ exports.login = async (req, res) => {
             });
         }
 
-        const token = jwt.sign({ id: usuarioLogin._id, username: usuarioLogin.username, role: usuarioLogin.role}, process.env.JWT_SECRET, { expiresIn: "1h" });
+        // Generar token JWT
+        const token = jwt.sign(
+            {
+                id: usuarioLogin._id,
+                username: usuarioLogin.username,
+                role: usuarioLogin.role
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' } // 7 días de duración
+        );
+
+        // ⭐ ENVIAR TOKEN EN COOKIE (en lugar de en el body)
+        res.cookie("token", token, {
+            httpOnly: true, // Impide que JavaScript lea la cookie (protección XSS)
+            secure: process.env.NODE_ENV === "production", // Solo HTTPS en producción
+            sameSite: "lax", // Protección CSRF
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+        });
 
         const userResponse = usuarioLogin.toObject();
         delete userResponse.password_hash;
 
         res.status(200).json({
             ok: true,
-            data: { token, user: userResponse },
+            data: userResponse,
             message: 'Login successful'
         });
 
@@ -165,14 +182,14 @@ exports.update = async (req, res) => {
 
 }
 
-exports.getUserProfile = async (req, res)=>{
-    const id = req.user.id 
+exports.getUserProfile = async (req, res) => {
+    const id = req.user.id
 
-    try{
+    try {
 
         const userProfile = await Users.findById(id).select('-password_hash');
 
-        if(!userProfile){
+        if (!userProfile) {
             return res.status(404).json({
                 ok: false,
                 type: 'NotFound',
@@ -186,7 +203,7 @@ exports.getUserProfile = async (req, res)=>{
             message: 'Profile retrieved successfully'
         })
 
-    }catch(error){
+    } catch (error) {
 
         res.status(500).json({
             ok: false,
