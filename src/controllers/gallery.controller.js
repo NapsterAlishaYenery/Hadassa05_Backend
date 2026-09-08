@@ -95,7 +95,6 @@ exports.createGallery = async (req, res) => {
 };
 
 
-
 /**
  * UPDATE - Actualizar campos básicos de la galería
  * PATCH /api/gallery/:id
@@ -337,7 +336,10 @@ exports.deleteMediaImage = async (req, res) => {
         const mediaToDelete = gallery.media[index];
 
         // Eliminar de Cloudinary
-        await deleteFile(mediaToDelete.public_id);
+        if(mediaToDelete){
+            await deleteFile(mediaToDelete.public_id, mediaToDelete.mediaType);
+        }
+        
 
         // Eliminar del array
         gallery.media.splice(index, 1);
@@ -386,10 +388,12 @@ exports.deleteAllMedia = async (req, res) => {
         }
 
         // Eliminar todas las imágenes de Cloudinary
-        const deletePromises = gallery.media.map(media =>
-            deleteFile(media.public_id)
-        );
-        await Promise.all(deletePromises);
+        if (gallery.media) {
+            const deletePromises = gallery.media.map(media => {
+                return deleteFile(media.public_id, media.mediaType);
+            });
+            await Promise.all(deletePromises);
+        }
 
         // Vaciar el array de media
         gallery.media = [];
@@ -429,10 +433,12 @@ exports.deleteEventGallery = async (req, res) => {
         }
 
         // Eliminar TODAS las imágenes de Cloudinary
-        const deletePromises = gallery.media.map(media =>
-            deleteFile(media.public_id)
-        );
-        await Promise.all(deletePromises);
+        if (gallery.media) {
+            const deletePromises = gallery.media.map(media => {
+                return deleteFile(media.public_id, media.mediaType);
+            });
+            await Promise.all(deletePromises);
+        }
 
         // Eliminar de la base de datos
         await gallery.deleteOne();

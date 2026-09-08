@@ -52,7 +52,7 @@ const gallerySchema = new Schema({
         type: [MediaSchema],
         default: [],
         validate: {
-            validator: function(v) {
+            validator: function (v) {
                 return v.length > 0;
             },
             message: 'Al menos una imagen o video es requerido'

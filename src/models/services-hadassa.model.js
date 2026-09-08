@@ -1,5 +1,5 @@
 const { Schema, model } = require('mongoose');
-
+const MediaSchema = require('./schemas/media.schema');
 const slugify = require('slugify');
 const stringArrayValidator = require('../utils/string-array.validator');
 
@@ -35,11 +35,18 @@ const ServiciosHadassa05 = new Schema({
         trim: true
     },
     images: {
-        type: [String],
-        lowercase: true,
-        required: [true, 'At least one image is required'],
-        validate: stringArrayValidator()
-
+        type: [MediaSchema],
+        default: [],
+        validate: {
+            validator: function (v) {
+                return v.length > 0;
+            },
+            message: 'At least one image is required'
+        }
+    },
+    coverImage: {
+        type: MediaSchema,
+        required: false
     },
     details: {
         items: {
@@ -81,18 +88,13 @@ ServiciosHadassa05.pre('validate', function () {
 
     if (this.isNew && this.title && !this.slug) {
         let baseSlug = slugify(this.title, { lower: true, strict: true });
-
-
         const date = new Date();
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
-
         const dateString = `${year}-${month}-${day}`;
-
         this.slug = `${baseSlug}-${dateString}`;
     }
-
 });
 
 

@@ -47,10 +47,16 @@ exports.uploadFile = async (filePath, folder) => {
  * Elimina una imagen de Cloudinary
  * @param {string} public_id - El ID público de la imagen
  */
-exports.deleteFile = async (public_id) => {
+exports.deleteFile = async (public_id, resource_type = 'image') => {
   try {
-    await cloudinary.uploader.destroy(public_id);
+    const result = await cloudinary.uploader.destroy(public_id, {
+      resource_type: resource_type,
+      invalidate: true
+    });
+    console.log(`✅ Archivo eliminado de Cloudinary: ${public_id}`);
+    return result;
   } catch (error) {
     console.error('Error al eliminar en Cloudinary:', error);
+    throw new Error('Error al eliminar el archivo de la nube');
   }
 };
